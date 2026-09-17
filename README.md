@@ -9,7 +9,7 @@ kept generic enough to use anywhere.
 | [`adversarial-review`](adversarial-review/SKILL.md) | A fresh-context reviewer charged to break the work, then triage with judgment: fix what is plainly wrong, escalate what is a real decision. |
 | [`numbered-rec-alts`](numbered-rec-alts/SKILL.md) | Present decisions as a numbered list, each with a recommendation and a tangible alternative. |
 
-`phased-program` calls the other two, so install all three.
+Some skills call others by name (`phased-program` uses `adversarial-review` and `numbered-rec-alts`), so install the whole set.
 
 ## Install
 
