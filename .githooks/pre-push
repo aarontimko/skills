@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+"""Every push: the full outgoing log (messages, author headers, patches) for each ref goes
+through the deterministic check, then the Claude stranger-review. Either failing blocks.
+"Outgoing" means not yet on the remote being pushed to; other remotes do not count. That trusts
+the local refs/remotes/<name>/*: never re-point an existing remote name at a different repo.
+-m makes merge commits show their full diff, so text introduced in a merge is read too."""
+import subprocess
+import sys
+from pathlib import Path
+
+root = Path(subprocess.check_output(["git", "rev-parse", "--show-toplevel"], text=True).strip())
+sys.path.insert(0, str(root / "scripts"))
+import disclosure  # noqa: E402
+
+remote = sys.argv[1]
+ZERO = "0" * 40
+for line in sys.stdin.read().splitlines():
+    _, local_sha, _, _ = line.split()
+    if local_sha == ZERO:
+        continue
+    if subprocess.check_output(["git", "cat-file", "-t", local_sha], text=True).strip() == "tag":
+        # An annotated tag's message and tagger header appear in no log.
+        tag = subprocess.check_output(["git", "cat-file", "-p", local_sha], text=True, errors="replace")
+        if not disclosure.check(tag, "tag object") or not disclosure.review(tag):
+            sys.exit(1)
+    outgoing = [local_sha, "--not", f"--remotes={remote}"]
+    count = int(subprocess.check_output(["git", "rev-list", "--count", *outgoing], text=True))
+    if count == 0:
+        print(f"pre-push: {local_sha[:12]} adds no new commits to {remote}", file=sys.stderr)
+        continue
+    print(f"pre-push: checking {count} outgoing commit(s)", file=sys.stderr)
+    log = subprocess.check_output(
+        ["git", "log", "-p", "-m", "--no-color", "--no-ext-diff", "--no-textconv", "--format=fuller", *outgoing],
+        text=True, errors="replace",
+    )
+    if not disclosure.check(log, f"push to {remote}") or not disclosure.review(log):
+        sys.exit(1)
+print("pre-push: disclosure gates green", file=sys.stderr)
