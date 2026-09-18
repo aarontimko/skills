@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Every commit: deterministic disclosure check over the staged diff. Enable with install.py."""
+"""Every commit: deterministic disclosure check over the staged diff. Enable with `git config core.hooksPath .githooks`."""
 import subprocess
 import sys
 from pathlib import Path

@@ -1,0 +1,14 @@
+{
+  "name": "aarontimko",
+  "description": "aarontimko's Claude Code plugins",
+  "owner": {
+    "name": "aarontimko"
+  },
+  "plugins": [
+    {
+      "name": "skills",
+      "source": "./",
+      "description": "Methodology skills for agentic builds: phased programs, adversarial review, numbered recommendations."
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "name": "skills",
+  "description": "Methodology skills for agentic builds: phased programs, adversarial review, numbered recommendations.",
+  "version": "0.1.0",
+  "author": { "name": "aarontimko" },
+  "repository": "https://github.com/aarontimko/skills",
+  "license": "Apache-2.0"
+}
