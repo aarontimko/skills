@@ -7,6 +7,7 @@ review(text) probabilistic: a tool-less `claude -p` reads the change as a strang
 import os
 import re
 import shutil
+import unicodedata
 import subprocess
 import sys
 from pathlib import Path
@@ -22,7 +23,7 @@ PATTERNS = re.compile(
     r"|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|sk-[A-Za-z0-9_-]{20,}"
     r"|AKIA[0-9A-Z]{16}|xox[baprs]-[A-Za-z0-9-]{10,}"
 )
-ZERO_WIDTH = re.compile("[\u200b\u200c\u200d\u2060\ufeff]")
+WORD = re.compile(r"[^\W\d_]+")
 BINARY = re.compile(r"^(Binary files .* differ|GIT binary patch)$", re.M)
 
 CHARTER = """\
@@ -72,6 +73,30 @@ def load_terms():
     return terms
 
 
+IDENTITY_HEADER = re.compile(r"^(Author|Commit|Tagger|tagger|author|committer):\s")
+
+
+def scan_lines(text):
+    """Yield (line number, line) for the lines a leak could ship in.
+
+    Inside a diff hunk only added lines count: removing a leaked line must not be blocked, and
+    a clean edit next to an old leak is not a new disclosure. Everything outside hunks (commit
+    messages, headers, tag objects, plain text) is scanned whole.
+    """
+    in_hunk = False
+    for n, line in enumerate(text.splitlines(), 1):
+        if line.startswith(("diff --git", "commit ")):
+            in_hunk = False
+        elif line.startswith("@@"):
+            in_hunk = True
+            continue
+        if in_hunk:
+            if line.startswith("+") and not line.startswith("+++"):
+                yield n, line[1:]
+            continue
+        yield n, line
+
+
 def check(text, label):
     """Return True when clean. Denylist hits print line numbers only, never the term."""
     if not text.strip():
@@ -81,19 +106,24 @@ def check(text, label):
     if terms is None:
         return False
     ok = True
-    text = ZERO_WIDTH.sub("", text)
-    # A term can straddle a hard wrap: also match against the text with diff markers and
-    # line breaks collapsed to single spaces.
-    flat = re.sub(r"\s+", " ", re.sub(r"\n[+\- ]", " ", text)).lower()
+    # Fold homoglyph and invisible-character evasions before matching.
+    text = "".join(c for c in unicodedata.normalize("NFKC", text) if unicodedata.category(c) != "Cf")
+    lines = list(scan_lines(text))
+    # A term can straddle a hard wrap: also match against the scanned lines joined by spaces.
+    flat = re.sub(r"\s+", " ", " ".join(l for _, l in lines)).lower()
     for t in terms:
-        if re.sub(r"\s+", " ", t) in flat and not any(t in l.lower() for l in text.splitlines()):
+        if re.sub(r"\s+", " ", t) in flat and not any(t in l.lower() for _, l in lines):
             say(f"disclosure-check [{label}]: DENYLIST hit spanning a line break (term #{terms.index(t) + 1})")
             ok = False
-    for n, line in enumerate(text.splitlines(), 1):
+    for n, line in lines:
         low = line.lower()
-        if any(t in low for t in terms):
+        if any(t in low for t in terms) and not IDENTITY_HEADER.match(line):
             say(f"disclosure-check [{label}]: DENYLIST hit at input line {n}")
             ok = False
+        for w in WORD.findall(line):
+            if any(ord(c) > 127 for c in w) and any(ord(c) < 128 for c in w):
+                say(f"disclosure-check [{label}]: mixed-script word at line {n}: {w}")
+                ok = False
         for m in EMAIL.finditer(line):
             if not ALLOWED_EMAIL.search(m.group()):
                 say(f"disclosure-check [{label}]: non-placeholder email at line {n}: {m.group()}")

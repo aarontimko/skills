@@ -1,6 +1,6 @@
 ---
 name: numbered-rec-alts
-description: Present recommendations as a numbered list where every item has a short topic phrase, a brief description, a Rec (the recommended solution and why), and an Alt (a tangible alternative that wins under different circumstances or goals). Use this whenever the user asks for recommendations, judgment calls, "what would you do", how to handle review findings, options for a decision, or invokes /numbered-rec-alts — and also when YOU need to surface non-mechanical decisions to the user mid-task (e.g. after a code review turned up judgment calls rather than clear bugs).
+description: Present recommendations as a numbered list where every item has a short topic phrase, a brief description, a Rec (the recommended solution and why), and an Alt (a tangible alternative that wins under different circumstances or goals). Use this whenever the user asks for recommendations, judgment calls, "what would you do", how to handle review findings, options for a decision, or invokes the skill by name — and also when YOU need to surface non-mechanical decisions to the user mid-task (e.g. after a code review turned up judgment calls rather than clear bugs).
 ---
 
 # Numbered Rec/Alts

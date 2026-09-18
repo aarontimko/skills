@@ -40,9 +40,11 @@ git -C ~/.claude/skills/skills config core.hooksPath .githooks
 Because the live skill directory is a public repository, anything written into a skill can
 ship. The `core.hooksPath` line above turns on two gates:
 
-- **pre-commit**, deterministic: the staged diff is checked against a private denylist
-  (`~/.config/oss-publish/denylist.txt`, one term per line, never committed) plus built-in
-  patterns for real email addresses, home paths and credentials. No denylist, no commit.
+- **pre-commit** and **commit-msg**, deterministic: the added lines of the staged diff, then
+  the commit message, are checked against a private denylist (`~/.config/oss-publish/denylist.txt`,
+  one term per line, never committed; a gitignored `z_ignore/oss-denylist.txt` adds repo-local
+  terms) plus built-in patterns for real email addresses, home paths and credentials. No
+  denylist, no commit.
 - **pre-push**, deterministic then probabilistic: the full outgoing log (patches, commit
   messages, author headers, tag messages) goes through the same check, then a tool-less
   `claude -p` reads it as a stranger trying to learn who wrote it and where they work. It must
