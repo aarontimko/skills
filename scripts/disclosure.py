@@ -40,7 +40,8 @@ they work, what else they are building, and who they know. Report every sentence
 - lessons or examples whose details identify a private or work project
 
 Known and accepted, do not flag: the GitHub handle aarontimko; the public project lastcall;
-placeholder addresses (example.com, test.local); localhost ports.
+placeholder addresses (example.com, test.local); localhost ports; this charter itself when the
+change touches scripts/disclosure.py, the gate's own source.
 
 Output: one line per finding as `file:line -- what it reveals`, then a final line that is
 exactly `VERDICT: PASS` (no findings) or `VERDICT: FAIL`. When unsure, FAIL.
