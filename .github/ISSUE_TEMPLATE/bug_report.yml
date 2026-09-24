@@ -1,0 +1,48 @@
+name: Bug report
+description: Something the scripts, hooks or plugin manifests did that they should not have done.
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not report a security problem here. Use the Security tab and
+        "Report a vulnerability" instead (see SECURITY.md).
+        Feedback on how a skill behaves is welcome as a blank issue instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you saw, in as few words as it takes.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps from a fresh clone.
+      placeholder: |
+        1. <first step>
+        2. <second step>
+        3. <what you did that went wrong>
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Commit
+      description: The output of `git rev-parse --short HEAD` in your clone.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: OS, Python, agent
+      placeholder: macOS 15.6 (arm64), Python 3.12, Claude Code 2.1
+    validations:
+      required: true

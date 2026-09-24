@@ -8,4 +8,4 @@ root = Path(subprocess.check_output(["git", "rev-parse", "--show-toplevel"], tex
 sys.path.insert(0, str(root / "scripts"))
 import disclosure  # noqa: E402
 
-sys.exit(0 if disclosure.check(Path(sys.argv[1]).read_text(errors="replace"), "commit message") else 1)
+sys.exit(0 if disclosure.check(Path(sys.argv[1]).read_text(errors="replace"), "commit message", exemptions=False) else 1)

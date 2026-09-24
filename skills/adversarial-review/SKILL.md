@@ -22,7 +22,7 @@ A fresh-context reviewer tries to break the work; findings get triaged so the us
 Launch a subagent (Agent tool, fresh context). The design rules, each load-bearing:
 
 - **Fresh context.** The reviewer must not share the builder's assumptions — it reads the code and system cold. Reviewing your own work in-context and calling it adversarial is theater; the whole value is the un-shared assumption.
-- **Adversarial charter.** Its job is to *break the claims, not confirm them*. Prompt it with the specific attacks: "try to write directly, bypassing the draft queue", "prove the budget ceiling does NOT bind", "try to make deploy-before-migrate brick login".
+- **Adversarial charter.** Its job is to *break the claims, not confirm them*. Prompt it with the specific attacks: "try to write directly, bypassing the approval step", "prove the rate limit does NOT bind", "try to make deploy-before-migrate break startup".
 - **3–6 named failure classes, specific to this change.** Generic "review this" reviewers find style nits. Name the hunts: privilege escape, invariant leak between features, silent no-op, spec divergence (built thing ≠ agreed design), weakened tests/pins, "does mainline behavior change AT ALL when the new feature exists".
 - **Live probes over code reading** wherever the system can run: snapshot state, fire an adversarial payload, diff bytes. A re-runnable zero-diff table beats any amount of source inspection.
 - **Evidence, not vibes.** Every finding names its proof — file:line, a failing command, a DB row, a diff. Number findings F1..Fn, severity-rank each (**BLOCKER / MAJOR / MINOR / NIT**), and label each **CONFIRMED** (reproduced/demonstrated) vs **PLAUSIBLE** (reasoned but not reproduced).

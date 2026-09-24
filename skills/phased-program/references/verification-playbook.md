@@ -27,7 +27,7 @@ Program-specific rules on top of the method:
 
 ## Grounded-claims standard (applies to everyone)
 
-A progress claim is grounded when it names its evidence: a ledger line, a DB row, a git SHA, a test count, a diff table. "Consolidation works now" is not a claim; "16 consolidations, all human-gated drafts, 15 approved 1 rejected-respected, decision rows append-only (tamper-probed)" is. Enforce this in worker prompts, verifier charters, your own reports to the human, and PR bodies.
+A progress claim is grounded when it names its evidence: a ledger line, a DB row, a git SHA, a test count, a diff table. "Consolidation works now" is not a claim; "42 imports processed, 40 accepted and 2 rejected with reasons logged, audit rows append-only (tamper-probed)" is. Enforce this in worker prompts, verifier charters, your own reports to the human, and PR bodies.
 
 ## Score-hygiene rules learned the hard way
 

@@ -41,7 +41,8 @@ they work, what else they are building, and who they know. Report every sentence
 
 Known and accepted, do not flag: the GitHub handle aarontimko; the public project lastcall;
 placeholder addresses (example.com, test.local); localhost ports; the author's own name and
-noreply address in Author/Commit/Tagger headers; this charter itself when the
+noreply address in Author/Commit/Tagger headers and in the one `Copyright <year> <name>` line of
+the NOTICE file; this charter itself when the
 change touches scripts/disclosure.py, the gate's own source.
 
 Output: one line per finding as `file:line -- what it reveals`, then a final line that is
@@ -54,7 +55,12 @@ def say(msg):
 
 
 def repo_root():
-    return Path(subprocess.check_output(["git", "rev-parse", "--show-toplevel"], text=True).strip())
+    try:
+        out = subprocess.check_output(["git", "rev-parse", "--show-toplevel"], text=True, stderr=subprocess.DEVNULL)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        say("disclosure: not inside a git repository; only the global denylist applies.")
+        return None
+    return Path(out.strip())
 
 
 def load_terms():
@@ -63,8 +69,9 @@ def load_terms():
         say("  employer and private project names, hostnames, surname) before committing.")
         return None
     terms = []
-    for path in (DENYLIST, repo_root() / "z_ignore/oss-denylist.txt"):
-        if path.is_file():
+    root = repo_root()
+    for path in (DENYLIST, root / "z_ignore/oss-denylist.txt" if root else None):
+        if path and path.is_file():
             for line in path.read_text().splitlines():
                 line = line.strip()
                 if line and not line.startswith("#"):
@@ -76,31 +83,50 @@ def load_terms():
 
 
 IDENTITY_HEADER = re.compile(r"^(Author|Commit|Tagger|tagger|author|committer):\s")
+# The maintainer's name appears in exactly one deliberate place: the copyright line in NOTICE.
+COPYRIGHT_FILE = "NOTICE"
+# Only a bare name may follow the year: capitalized words, nothing after them.
+COPYRIGHT_LINE = re.compile(r"^Copyright \d{4}(-\d{4})? [A-Z][a-z]+( [A-Z][a-z]+){1,2}$")
+NOTICE_HEADER = "diff --git a/NOTICE b/NOTICE"
 
 
 def scan_lines(text):
-    """Yield (line number, line) for the lines a leak could ship in.
+    """Yield (line number, line, path, in_hunk) for the lines a leak could ship in.
 
     Inside a diff hunk only added lines count: removing a leaked line must not be blocked, and
     a clean edit next to an old leak is not a new disclosure. Everything outside hunks (commit
     messages, headers, tag objects, plain text) is scanned whole.
     """
     in_hunk = False
+    path = None
     for n, line in enumerate(text.splitlines(), 1):
         if line.startswith(("diff --git", "commit ")):
             in_hunk = False
+            # Exact match only: a crafted path such as "x b/NOTICE" must not pass for NOTICE.
+            path = COPYRIGHT_FILE if line == NOTICE_HEADER else None
         elif line.startswith("@@"):
             in_hunk = True
             continue
         if in_hunk:
             if line.startswith("+") and not line.startswith("+++"):
-                yield n, line[1:]
+                yield n, line[1:], path, True
             continue
-        yield n, line
+        yield n, line, path, False
 
 
-def check(text, label):
-    """Return True when clean. Denylist hits print line numbers only, never the term."""
+def exempt(line, path, in_hunk):
+    """Identity headers count only outside hunks; the copyright line only inside NOTICE's hunk."""
+    if in_hunk:
+        return path == COPYRIGHT_FILE and bool(COPYRIGHT_LINE.match(line))
+    return bool(IDENTITY_HEADER.match(line))
+
+
+def check(text, label, exemptions=True):
+    """Return True when clean. Denylist hits print line numbers only, never the term.
+
+    exemptions=False for plain text such as a commit message, where a fake diff header or
+    identity header could otherwise claim an exemption.
+    """
     if not text.strip():
         say(f"disclosure-check [{label}]: EMPTY input; refusing to call that a pass.")
         return False
@@ -111,15 +137,16 @@ def check(text, label):
     # Fold homoglyph and invisible-character evasions before matching.
     text = "".join(c for c in unicodedata.normalize("NFKC", text) if unicodedata.category(c) != "Cf")
     lines = list(scan_lines(text))
+    matchable = [l for _, l, p, h in lines if not (exemptions and exempt(l, p, h))]
     # A term can straddle a hard wrap: also match against the scanned lines joined by spaces.
-    flat = re.sub(r"\s+", " ", " ".join(l for _, l in lines)).lower()
+    flat = re.sub(r"\s+", " ", " ".join(matchable)).lower()
     for t in terms:
-        if re.sub(r"\s+", " ", t) in flat and not any(t in l.lower() for _, l in lines):
+        if re.sub(r"\s+", " ", t) in flat and not any(t in l.lower() for l in matchable):
             say(f"disclosure-check [{label}]: DENYLIST hit spanning a line break (term #{terms.index(t) + 1})")
             ok = False
-    for n, line in lines:
+    for n, line, path, hunk in lines:
         low = line.lower()
-        if any(t in low for t in terms) and not IDENTITY_HEADER.match(line):
+        if any(t in low for t in terms) and not (exemptions and exempt(line, path, hunk)):
             say(f"disclosure-check [{label}]: DENYLIST hit at input line {n}")
             ok = False
         for w in WORD.findall(line):
@@ -178,6 +205,8 @@ if __name__ == "__main__":
     data = sys.stdin.read()
     if mode == "check":
         sys.exit(0 if check(data, "stdin") else 1)
+    if mode == "check-text":
+        sys.exit(0 if check(data, "stdin", exemptions=False) else 1)
     if mode == "review":
         sys.exit(0 if review(data) else 1)
-    sys.exit("usage: disclosure.py check|review < text")
+    sys.exit("usage: disclosure.py check|check-text|review < text")
