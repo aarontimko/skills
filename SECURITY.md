@@ -41,7 +41,7 @@ What the repository runs, so you can judge whether something is in scope:
 - **The git hooks** (`.githooks/`, enabled only by `git config core.hooksPath .githooks`)
   run `scripts/disclosure.py` with Python's standard library. They read the staged diff or
   the outgoing log, the commit message, and the denylist files named in the README. They
-  write nothing but temporary data in memory.
+  make no repository changes (Python may write a `__pycache__` folder).
 - **The pre-push hook reaches the network** by running the `claude` CLI, which sends the
   outgoing log to Anthropic's API under your own Claude login. `SKIP_LLM_REVIEW=1` turns
   that call off for one push. Nothing else here makes a network call.

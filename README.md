@@ -1,7 +1,7 @@
 # skills
 
 Agent skills for running AI-built software with the rigor of a real engineering program:
-phased gates, adversarial review, and decisions presented as recommendations with
+phased checkpoints, adversarial review, and decisions presented as recommendations with
 alternatives. These are the skills I use day to day for AI-native coding, published as I
 work, so I can point people at what has held up.
 
@@ -72,6 +72,16 @@ into a skill can ship. The `core.hooksPath` line above turns on three checks:
   `claude -p` reads it as a stranger trying to learn who wrote it and where they work. It
   must answer `VERDICT: PASS`. It fails closed; `SKIP_LLM_REVIEW=1 git push` is the
   deliberate override.
+
+If you fork this, create your own denylist before your first commit:
+
+```bash
+mkdir -p ~/.config/oss-publish
+printf '%s\n' 'your surname' 'your employer' > ~/.config/oss-publish/denylist.txt
+```
+
+The pre-push review needs the `claude` CLI. Without it, push with `SKIP_LLM_REVIEW=1` and read
+the outgoing log yourself.
 
 Keep one denylist per machine. On a work machine it carries the employer's name, internal
 project names and hostnames, which is what stops a lesson learned at work from arriving in

@@ -16,7 +16,7 @@ git diff --cached | python3 scripts/disclosure.py check   # what pre-commit runs
 
 Commits and pushes are checked; see README "Keeping a live, public skills directory clean".
 The checks fail closed, and the denylist they read lives outside the repo. Changes reach
-`main` through a pull request.
+`main` through a squash-merged pull request from the maintainer.
 
 ## Rules for changing a skill
 

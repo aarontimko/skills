@@ -68,7 +68,7 @@ Merge is not done; *live* is done. If the program's output runs somewhere perman
 - [ ] Retag/roll the stack per its runbook; run migrations (additive-only) before expecting health checks to pass.
 - [ ] Live verification: health/ready endpoints, the stack's contract-check script, cleanup of any probe artifacts it leaves.
 - [ ] Execute the live config change the phase was FOR (feature flips, versioned config bumps) — with whatever audit mechanism the stack uses (pre-change epochs, change log), so the change is attributable.
-- [ ] Record the old→new tag in the stack's runbook with date, PR, migrations delta, verification results, and any client-facing breakage (e.g. "connector reconnect required" vs "no schema changes — no reconnect").
+- [ ] Record the old→new tag in the stack's runbook with date, PR, migrations delta, verification results, and any client-facing breakage (e.g. "clients must re-authenticate" vs "no schema changes, clients unaffected").
 - [ ] Tell the human what is now live and what to watch (the metric that will show whether the change works).
 
 ## 9. Program close-out (after the last gate)

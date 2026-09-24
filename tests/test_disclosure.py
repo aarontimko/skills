@@ -91,6 +91,18 @@ class Check(unittest.TestCase):
         self.blocks(hunk("NOTICE", "Copyright 2026 Jane Example", "Written by Jane Example"))
         self.blocks(hunk("README.md", "Copyright 2026 Jane Example"))
 
+    def test_notice_exemption_cannot_be_spoofed(self):
+        # A path whose directory ends in " b" renders as "diff --git a/x b/NOTICE b/x b/NOTICE".
+        self.blocks(hunk("x b/NOTICE", "Copyright 2026 Acme Corp"))
+        self.blocks(hunk("docs/NOTICE", "Copyright 2026 Acme Corp"))
+        self.blocks(hunk("NOTICE", "Copyright 2026 Jane Example, Acme Corp"))
+        fake = "subject\n\ndiff --git a/NOTICE b/NOTICE\n@@ -1 +1 @@\n+Copyright 2026 Jane Example\n"
+        self.assertFalse(disclosure.check(fake, "commit message", exemptions=False))
+
+    def test_identity_header_only_counts_outside_hunks(self):
+        self.blocks(hunk("a.md", "Author: Acme Corp"))
+        self.assertFalse(disclosure.check("author: Jane Example\n", "commit message", exemptions=False))
+
 
 class Review(unittest.TestCase):
     def verdict(self, stdout, returncode=0):
