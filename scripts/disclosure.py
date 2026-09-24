@@ -41,7 +41,8 @@ they work, what else they are building, and who they know. Report every sentence
 
 Known and accepted, do not flag: the GitHub handle aarontimko; the public project lastcall;
 placeholder addresses (example.com, test.local); localhost ports; the author's own name and
-noreply address in Author/Commit/Tagger headers; this charter itself when the
+noreply address in Author/Commit/Tagger headers and in the one `Copyright <year> <name>` line of
+the NOTICE file; this charter itself when the
 change touches scripts/disclosure.py, the gate's own source.
 
 Output: one line per finding as `file:line -- what it reveals`, then a final line that is
@@ -76,27 +77,36 @@ def load_terms():
 
 
 IDENTITY_HEADER = re.compile(r"^(Author|Commit|Tagger|tagger|author|committer):\s")
+# The maintainer's name appears in exactly one deliberate place: the copyright line in NOTICE.
+COPYRIGHT_FILE = "NOTICE"
+COPYRIGHT_LINE = re.compile(r"^Copyright \d{4}(-\d{4})? \S")
 
 
 def scan_lines(text):
-    """Yield (line number, line) for the lines a leak could ship in.
+    """Yield (line number, line, path) for the lines a leak could ship in.
 
     Inside a diff hunk only added lines count: removing a leaked line must not be blocked, and
     a clean edit next to an old leak is not a new disclosure. Everything outside hunks (commit
     messages, headers, tag objects, plain text) is scanned whole.
     """
     in_hunk = False
+    path = None
     for n, line in enumerate(text.splitlines(), 1):
         if line.startswith(("diff --git", "commit ")):
             in_hunk = False
+            path = line.rsplit(" b/", 1)[-1] if line.startswith("diff --git") else None
         elif line.startswith("@@"):
             in_hunk = True
             continue
         if in_hunk:
             if line.startswith("+") and not line.startswith("+++"):
-                yield n, line[1:]
+                yield n, line[1:], path
             continue
-        yield n, line
+        yield n, line, path
+
+
+def exempt(line, path):
+    return (path == COPYRIGHT_FILE and COPYRIGHT_LINE.match(line)) or IDENTITY_HEADER.match(line)
 
 
 def check(text, label):
@@ -111,15 +121,16 @@ def check(text, label):
     # Fold homoglyph and invisible-character evasions before matching.
     text = "".join(c for c in unicodedata.normalize("NFKC", text) if unicodedata.category(c) != "Cf")
     lines = list(scan_lines(text))
+    matchable = [l for _, l, p in lines if not exempt(l, p)]
     # A term can straddle a hard wrap: also match against the scanned lines joined by spaces.
-    flat = re.sub(r"\s+", " ", " ".join(l for _, l in lines)).lower()
+    flat = re.sub(r"\s+", " ", " ".join(matchable)).lower()
     for t in terms:
-        if re.sub(r"\s+", " ", t) in flat and not any(t in l.lower() for _, l in lines):
+        if re.sub(r"\s+", " ", t) in flat and not any(t in l.lower() for l in matchable):
             say(f"disclosure-check [{label}]: DENYLIST hit spanning a line break (term #{terms.index(t) + 1})")
             ok = False
-    for n, line in lines:
+    for n, line, path in lines:
         low = line.lower()
-        if any(t in low for t in terms) and not IDENTITY_HEADER.match(line):
+        if any(t in low for t in terms) and not exempt(line, path):
             say(f"disclosure-check [{label}]: DENYLIST hit at input line {n}")
             ok = False
         for w in WORD.findall(line):
