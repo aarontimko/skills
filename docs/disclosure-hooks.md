@@ -14,6 +14,13 @@ blind to meaning. A probabilistic check hands the whole outgoing log to a tool-l
 catches what no list names, such as a lesson that describes a private product without naming
 it. Neither one alone is enough, so a push must pass both.
 
+## Setup
+
+The README's install section turns the hooks on with `git config core.hooksPath .githooks`
+and shows how to create the denylist at `~/.config/oss-publish/denylist.txt`. `OSS_DENYLIST`
+points the check at another file, and a gitignored `z_ignore/oss-denylist.txt` adds terms for
+one repository.
+
 ## Where each check runs
 
 | Hook | Input | Deterministic | Stranger review |
@@ -29,7 +36,7 @@ cheap, and nothing leaves the machine without it.
 
 Every path that is not an explicit pass is a failure:
 
-- No denylist file, or an empty one, blocks the commit. An empty list would pass everything.
+- No denylist file, or an empty one, blocks every check. An empty list would pass everything.
 - Empty input blocks. A bug that feeds the check nothing must not read as clean.
 - The review passes only when its last line is exactly `VERDICT: PASS` and it is the only
   verdict line, so quoted text in the diff cannot supply one. A timeout, a missing `claude`
@@ -48,7 +55,8 @@ Every path that is not an explicit pass is a failure:
   diffs and annotated tag objects, which a plain log skips.
 - **Exemption spoofing.** The one deliberate name in the repository, the copyright line in
   `NOTICE`, is exempt only when the diff header is exactly the root `NOTICE` and the line ends
-  at the name. Commit messages get no exemptions, so a pasted fake diff cannot claim one.
+  at the name. Author, committer and tagger headers in the log are the only other exemption.
+  Commit messages get no exemptions, so a pasted fake diff cannot claim one.
 
 Removed lines are never checked: deleting a leak must not be blocked.
 
@@ -66,4 +74,5 @@ Removed lines are never checked: deleting a leak must not be blocked.
 
 Everything is Python standard library: `scripts/disclosure.py` holds both checks and the
 review's instructions, and `.githooks/` holds three thin callers. The tests in `tests/` plant
-each evasion above and confirm it is blocked.
+the character, line-wrap and exemption evasions above and confirm each is blocked. The merge
+and tag paths are covered by the pre-push hook's code, not by a test.
