@@ -83,6 +83,9 @@ printf '%s\n' 'your surname' 'your employer' > ~/.config/oss-publish/denylist.tx
 The pre-push review needs the `claude` CLI. Without it, push with `SKIP_LLM_REVIEW=1` and read
 the outgoing log yourself.
 
+[docs/disclosure-hooks.md](docs/disclosure-hooks.md) explains the design, the evasions it
+catches and its limits.
+
 Keep one denylist per machine. On a work machine it carries the employer's name, internal
 project names and hostnames, which is what stops a lesson learned at work from arriving in
 public with the project's name still on it. The tests for these checks run with

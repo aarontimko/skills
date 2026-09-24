@@ -39,4 +39,5 @@ directory, its `SKILL.md` ends with a table saying which file to read for which 
 ### Disclosure checks
 
 `scripts/disclosure.py` holds both checks and `tests/test_disclosure.py` pins their behavior;
-change them together, and update the README section in the same commit.
+change them together, and update the README section and `docs/disclosure-hooks.md` (the
+design, the evasions and the limits; read it before changing a check) in the same commit.
